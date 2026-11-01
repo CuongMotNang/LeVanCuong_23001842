@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 3 - Quản lý công việc cá nhân</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px 16px;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+      color: #1e293b;
+    }
+    .page { max-width: 720px; margin: 0 auto; }
+    .back { display: inline-block; margin-bottom: 18px; color: #2563eb; text-decoration: none; font-weight: 600; }
+    .back:hover { text-decoration: underline; }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, .09);
+      overflow: hidden;
+    }
+    .head {
+      padding: 26px 28px;
+      background: linear-gradient(120deg, #1e3a8a, #7c3aed);
+      color: #fff;
+    }
+    .head h1 { margin: 0 0 6px; font-size: 23px; }
+    .head p { margin: 0; font-size: 14px; opacity: .85; }
+    .body { padding: 26px 28px 30px; }
+    .add { display: flex; gap: 10px; }
+    .add input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    .add input:focus { outline: 2px solid #93c5fd; border-color: #2563eb; }
+    .add button {
+      padding: 12px 22px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .add button:hover { background: #1d4ed8; }
+    .error { color: #dc2626; font-size: 13px; margin: 8px 0 0; }
+    .stats {
+      display: flex;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .stat {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    .stat b { display: block; font-size: 22px; color: #1d4ed8; }
+    .stat span { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+    .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filters button {
+      padding: 8px 16px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #475569;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .filters button:hover { border-color: #2563eb; color: #2563eb; }
+    .filters button.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    ul.tasks { list-style: none; margin: 0; padding: 0; }
+    li.task {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 11px;
+      margin-bottom: 10px;
+      background: #fff;
+      transition: background .2s, border-color .2s;
+    }
+    li.task:hover { border-color: #bfdbfe; background: #f8fbff; }
+    li.task input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer; }
+    li.task .name { flex: 1; font-size: 15px; word-break: break-word; }
+    li.task.done .name { text-decoration: line-through; color: #94a3b8; }
+    li.task .del {
+      border: none;
+      background: #fee2e2;
+      color: #b91c1c;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+    li.task .del:hover { background: #fecaca; }
+    .empty {
+      text-align: center;
+      padding: 36px 16px;
+      color: #94a3b8;
+      font-size: 14px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+    }
+    .foot { display: flex; justify-content: flex-end; margin-top: 18px; }
+    .foot button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 10px;
+      background: #fef3c7;
+      color: #b45309;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .foot button:hover:not(:disabled) { background: #fde68a; }
+    .foot button:disabled { opacity: .45; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="page" id="app">
+    <a class="back" href="../index.html">&larr; Danh sách bài tập</a>
+
+    <div class="card">
+      <div class="head">
+        <h1>Quản lý công việc cá nhân</h1>
+        <p>Thêm, đánh dấu hoàn thành, lọc và xóa công việc trong ngày.</p>
+      </div>
+
+      <div class="body">
+        <div class="add">
+          <input
+            type="text"
+            v-model="tenMoi"
+            placeholder="Nhập tên công việc rồi nhấn Enter..."
+            v-on:keyup.enter="themViec"
+          >
+          <button v-on:click="themViec">Thêm</button>
+        </div>
+        <p class="error" v-if="loi">{{ loi }}</p>
+
+        <div class="stats">
+          <div class="stat">
+            <b>{{ tongSoViec }}</b>
+            <span>Tổng công việc</span>
+          </div>
+          <div class="stat">
+            <b>{{ soViecChuaXong }}</b>
+            <span>Chưa hoàn thành</span>
+          </div>
+          <div class="stat">
+            <b>{{ soViecDaXong }}</b>
+            <span>Đã hoàn thành</span>
+          </div>
+        </div>
+
+        <div class="filters">
+          <button
+            v-for="boLoc in danhSachBoLoc"
+            v-bind:key="boLoc.value"
+            v-bind:class="{ active: boLocDangChon === boLoc.value }"
+            v-on:click="boLocDangChon = boLoc.value"
+          >
+            {{ boLoc.label }}
+          </button>
+        </div>
+
+        <ul class="tasks" v-if="danhSachLoc.length">
+          <li
+            class="task"
+            v-for="viec in danhSachLoc"
+            v-bind:key="viec.id"
+            v-bind:class="{ done: viec.hoanThanh }"
+          >
+            <input type="checkbox" v-model="viec.hoanThanh">
+            <span class="name">{{ viec.ten }}</span>
+            <button class="del" v-on:click="xoaViec(viec.id)" title="Xóa công việc">&times;</button>
+          </li>
+        </ul>
+
+        <div class="empty" v-else>
+          {{ thongBaoRong }}
+        </div>
+
+        <div class="foot">
+          <button v-on:click="xoaViecDaXong" v-bind:disabled="soViecDaXong === 0">
+            Xóa các việc đã hoàn thành
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/vue.global.prod.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          tenMoi: '',
+          loi: '',
+          boLocDangChon: 'all',
+          danhSachBoLoc: [
+            { value: 'all', label: 'Tất cả' },
+            { value: 'active', label: 'Chưa hoàn thành' },
+            { value: 'done', label: 'Đã hoàn thành' }
+          ],
+          nextId: 5,
+          danhSachViec: [
+            { id: 1, ten: 'Học VueJS cơ bản', hoanThanh: false },
+            { id: 2, ten: 'Làm bài tập buổi 6', hoanThanh: false },
+            { id: 3, ten: 'Ôn tập PHP', hoanThanh: true },
+            { id: 4, ten: 'Uống đủ nước', hoanThanh: true }
+          ]
+        };
+      },
+      computed: {
+        tongSoViec() {
+          return this.danhSachViec.length;
+        },
+        soViecChuaXong() {
+          return this.danhSachViec.filter(viec => !viec.hoanThanh).length;
+        },
+        soViecDaXong() {
+          return this.danhSachViec.filter(viec => viec.hoanThanh).length;
+        },
+        danhSachLoc() {
+          if (this.boLocDangChon === 'active') {
+            return this.danhSachViec.filter(viec => !viec.hoanThanh);
+          }
+          if (this.boLocDangChon === 'done') {
+            return this.danhSachViec.filter(viec => viec.hoanThanh);
+          }
+          return this.danhSachViec;
+        },
+        thongBaoRong() {
+          if (this.tongSoViec === 0) {
+            return 'Danh sách công việc đang trống. Hãy thêm công việc đầu tiên!';
+          }
+          if (this.boLocDangChon === 'active') {
+            return 'Tuyệt vời! Không còn công việc nào chưa hoàn thành.';
+          }
+          if (this.boLocDangChon === 'done') {
+            return 'Chưa có công việc nào được hoàn thành.';
+          }
+          return 'Không có công việc nào để hiển thị.';
+        }
+      },
+      methods: {
+        themViec() {
+          const ten = this.tenMoi.trim();
+          if (!ten) {
+            this.loi = 'Tên công việc không được để trống hoặc chỉ chứa khoảng trắng.';
+            return;
+          }
+          this.danhSachViec.push({
+            id: this.nextId++,
+            ten: ten,
+            hoanThanh: false
+          });
+          this.tenMoi = '';
+          this.loi = '';
+        },
+        xoaViec(id) {
+          this.danhSachViec = this.danhSachViec.filter(viec => viec.id !== id);
+        },
+        xoaViecDaXong() {
+          this.danhSachViec = this.danhSachViec.filter(viec => !viec.hoanThanh);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

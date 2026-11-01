@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài 1 - Thẻ thông tin sinh viên</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 40px 16px;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+      color: #1e293b;
+    }
+    .page { max-width: 760px; margin: 0 auto; }
+    .back { display: inline-block; margin-bottom: 18px; color: #2563eb; text-decoration: none; font-weight: 600; }
+    .back:hover { text-decoration: underline; }
+    .card {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 28px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, .09);
+    }
+    @media (max-width: 620px) { .card { grid-template-columns: 1fr; text-align: center; } }
+    .avatar {
+      width: 100%;
+      max-width: 200px;
+      border-radius: 16px;
+      border: 4px solid #e0e7ff;
+      display: block;
+      margin: 0 auto;
+    }
+    h2 { margin: 0 0 6px; font-size: 25px; color: #1e40af; }
+    .mssv { margin: 0 0 18px; color: #64748b; font-weight: 600; }
+    .row { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px dashed #e2e8f0; font-size: 15px; }
+    .row:last-of-type { border-bottom: none; }
+    .label { min-width: 120px; color: #64748b; font-weight: 600; }
+    .grade {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .grade.gioi { background: #dcfce7; color: #15803d; }
+    .grade.kha { background: #dbeafe; color: #1d4ed8; }
+    .grade.trungbinh { background: #fef3c7; color: #b45309; }
+    .grade.chuadat { background: #fee2e2; color: #b91c1c; }
+    .status { font-weight: 700; }
+    .status.active { color: #16a34a; }
+    .status.inactive { color: #dc2626; }
+    .intro {
+      margin-top: 18px;
+      padding: 14px 16px;
+      background: #f1f5f9;
+      border-left: 4px solid #2563eb;
+      border-radius: 10px;
+      line-height: 1.6;
+      font-size: 14px;
+      color: #334155;
+    }
+    .actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+    button {
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .2s, transform .15s;
+    }
+    button:hover { background: #1d4ed8; transform: translateY(-1px); }
+    button.ghost { background: #e2e8f0; color: #334155; }
+    button.ghost:hover { background: #cbd5e1; }
+    .editor {
+      margin-top: 24px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 22px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, .05);
+    }
+    .editor h3 { margin: 0 0 16px; font-size: 16px; color: #1e293b; }
+    .editor label { display: block; margin-bottom: 12px; font-size: 14px; font-weight: 600; color: #475569; }
+    .editor input[type="number"] {
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .editor input[type="number"]:focus { outline: 2px solid #93c5fd; border-color: #2563eb; }
+    .check { display: flex; align-items: center; gap: 8px; }
+    .check input { width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+  <div class="page" id="app">
+    <a class="back" href="../index.html">&larr; Danh sách bài tập</a>
+
+    <div class="card">
+      <div>
+        <img class="avatar" v-bind:src="sinhVien.anh" v-bind:alt="'Ảnh đại diện của ' + sinhVien.hoTen">
+      </div>
+      <div>
+        <h2>{{ sinhVien.hoTen }}</h2>
+        <p class="mssv">{{ sinhVien.maSV }}</p>
+
+        <div class="row">
+          <span class="label">Họ tên</span>
+          <span>{{ sinhVien.hoTen }}</span>
+        </div>
+        <div class="row">
+          <span class="label">Lớp</span>
+          <span v-text="sinhVien.lop"></span>
+        </div>
+        <div class="row">
+          <span class="label">Điểm trung bình</span>
+          <span>{{ dinhDangDiem }}</span>
+        </div>
+        <div class="row">
+          <span class="label">Trạng thái</span>
+          <span class="status" v-bind:class="sinhVien.dangHoc ? 'active' : 'inactive'">
+            {{ sinhVien.dangHoc ? 'Đang học' : 'Đã nghỉ' }}
+          </span>
+        </div>
+
+        <span class="grade" v-bind:class="lopXepLoai">{{ xepLoai }}</span>
+
+        <div class="intro" v-show="hienGioiThieu">
+          Xin chào! Mình là {{ sinhVien.hoTen }}, sinh viên lớp {{ sinhVien.lop }}.
+          Hiện tại mình {{ sinhVien.dangHoc ? 'đang theo học' : 'đã nghỉ học' }} và có điểm trung bình
+          {{ dinhDangDiem }}, xếp loại {{ xepLoai.toLowerCase() }}.
+        </div>
+
+        <div class="actions">
+          <button v-on:click="hienGioiThieu = !hienGioiThieu">
+            {{ hienGioiThieu ? 'Ẩn giới thiệu' : 'Hiện giới thiệu' }}
+          </button>
+          <button class="ghost" v-on:click="doiTrangThai">
+            {{ sinhVien.dangHoc ? 'Đánh dấu đã nghỉ' : 'Đánh dấu đang học' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="editor">
+      <h3>Thay đổi dữ liệu để kiểm tra cập nhật giao diện</h3>
+      <label>
+        Điểm trung bình (0 - 10)
+        <input type="number" v-model.number="sinhVien.diemTB" min="0" max="10" step="0.1">
+      </label>
+      <label class="check">
+        <input type="checkbox" v-model="sinhVien.dangHoc">
+        Đang học
+      </label>
+    </div>
+  </div>
+
+  <script src="../assets/vue.global.prod.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          hienGioiThieu: true,
+          sinhVien: {
+            maSV: '23001842',
+            hoTen: 'Lê Văn Cường',
+            lop: 'KTPM K23',
+            anh: '../assets/avatar.svg',
+            diemTB: 8.2,
+            dangHoc: true
+          }
+        };
+      },
+      computed: {
+        dinhDangDiem() {
+          return Number(this.sinhVien.diemTB).toFixed(1);
+        },
+        xepLoai() {
+          const diem = Number(this.sinhVien.diemTB);
+          if (diem >= 8) return 'Giỏi';
+          if (diem >= 6.5) return 'Khá';
+          if (diem >= 5) return 'Trung bình';
+          return 'Chưa đạt';
+        },
+        lopXepLoai() {
+          const diem = Number(this.sinhVien.diemTB);
+          if (diem >= 8) return 'gioi';
+          if (diem >= 6.5) return 'kha';
+          if (diem >= 5) return 'trungbinh';
+          return 'chuadat';
+        }
+      },
+      methods: {
+        doiTrangThai() {
+          this.sinhVien.dangHoc = !this.sinhVien.dangHoc;
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
