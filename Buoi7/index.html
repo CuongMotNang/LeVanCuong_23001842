@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài 2 - Danh mục sản phẩm</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:1000px;margin:24px auto;padding:0 16px}
+  .luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;align-items:start}
+  .the{border:1px solid #ddd;border-radius:10px;padding:12px;background:#fff}
+  .the img{width:100%;border-radius:8px}
+  .het-hang{opacity:.75}
+  .gia{font-weight:700;color:#b91c1c;margin:4px 0}
+  .nhan{padding:2px 8px;border-radius:10px;font-size:12px;color:#fff}
+  .con{background:#16a34a}.het{background:#dc2626}
+  button{padding:6px 10px;margin-right:6px;cursor:pointer}
+  button:disabled{cursor:not-allowed;opacity:.5}
+  .mota{font-size:14px;color:#444;background:#f3f4f6;padding:8px;border-radius:6px}
+  .tb{background:#dcfce7;padding:8px;border-radius:6px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <h2>Danh mục sản phẩm</h2>
+  <div v-if="daMua" class="tb">Đã thêm "{{ daMua }}" vào giỏ.</div>
+  <div class="luoi">
+    <the-san-pham
+      v-for="sp in sanPham" :key="sp.id"
+      :ten="sp.ten" :gia="sp.gia" :anh="sp.anh" :mota="sp.mota" :ton-kho="sp.tonKho"
+      @mua="daMua = $event"
+    ></the-san-pham>
+  </div>
+</div>
+
+<!-- Nạp component TRƯỚC khi mount ứng dụng -->
+<script src="components/TheSanPham.js"></script>
+<script>
+  const hinh = (emoji, mau) => 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="300" height="180" fill="${mau}"/><text x="150" y="115" font-size="80" text-anchor="middle">${emoji}</text></svg>`);
+
+  const app = Vue.createApp({
+    data() {
+      return {
+        daMua: '',
+        sanPham: [
+          { id: 1, ten: 'Tai nghe Bluetooth', gia: 450000, anh: hinh('🎧', '#dbeafe'), mota: 'Pin 20 giờ, chống ồn cơ bản.', tonKho: 12 },
+          { id: 2, ten: 'Đồng hồ thông minh', gia: 1290000, anh: hinh('⌚', '#fce7f3'), mota: 'Theo dõi nhịp tim, giấc ngủ và bước chân.', tonKho: 0 },
+          { id: 3, ten: 'Bình giữ nhiệt', gia: 180000, anh: hinh('🧉', '#dcfce7'), mota: 'Giữ nóng 12 giờ, dung tích 500 ml.', tonKho: 30 },
+          { id: 4, ten: 'Balo laptop', gia: 520000, anh: hinh('🎒', '#fef3c7'), mota: 'Ngăn chống sốc cho laptop 15.6 inch.', tonKho: 3 },
+          { id: 5, ten: 'Sổ tay bìa da', gia: 95000, anh: hinh('📓', '#ede9fe'), tonKho: 25 }, // dùng mô tả mặc định
+        ],
+      };
+    },
+  });
+  app.component('the-san-pham', TheSanPham); // đăng ký trước mount
+  app.mount('#app');
+</script>
+</body>
+</html>

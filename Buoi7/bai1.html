@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài 1 - Danh sách sản phẩm</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#222}
+  .toolbar,.form{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+  input,select,button{padding:7px 10px;font-size:14px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #ddd;padding:8px;text-align:left}
+  th{background:#f3f4f6}
+  .badge{padding:2px 8px;border-radius:10px;font-size:12px;color:#fff}
+  .con{background:#16a34a}.het{background:#dc2626}
+  .warn{color:#b45309;background:#fef3c7;padding:6px 10px;border-radius:6px;margin:8px 0}
+  .err{color:#b91c1c;margin:4px 0}
+  .stats{margin:12px 0;font-weight:600}
+  .empty{text-align:center;color:#777}
+  .status{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<div id="app">
+  <h2>Quản lý sản phẩm</h2>
+  <div class="status">Trạng thái trang: <b>{{ trangThai }}</b></div>
+
+  <div class="toolbar">
+    <input v-model="tuKhoa" placeholder="Tìm theo tên...">
+    <select v-model="danhMuc">
+      <option value="">Tất cả danh mục</option>
+      <option v-for="dm in dsDanhMuc" :key="dm" :value="dm">{{ dm }}</option>
+    </select>
+    <select v-model="sapXep">
+      <option value="">Không sắp xếp</option>
+      <option value="asc">Giá tăng dần</option>
+      <option value="desc">Giá giảm dần</option>
+    </select>
+  </div>
+  <div v-if="thongBao" class="warn">{{ thongBao }}</div>
+
+  <div class="stats">
+    Hiển thị {{ sanPhamHienThi.length }} / {{ sanPham.length }} sản phẩm —
+    Tổng giá trị tồn kho: {{ dinhDang(tongGiaTriTon) }}
+  </div>
+
+  <table>
+    <thead><tr><th>ID</th><th>Tên</th><th>Giá</th><th>Danh mục</th><th>Tồn</th><th>Trạng thái</th><th></th></tr></thead>
+    <tbody>
+      <tr v-for="sp in sanPhamHienThi" :key="sp.id">
+        <td>{{ sp.id }}</td><td>{{ sp.ten }}</td><td>{{ dinhDang(sp.gia) }}</td>
+        <td>{{ sp.danhMuc }}</td><td>{{ sp.tonKho }}</td>
+        <td><span class="badge" :class="sp.tonKho > 0 ? 'con' : 'het'">{{ sp.tonKho > 0 ? 'Còn hàng' : 'Hết hàng' }}</span></td>
+        <td><button @click="xoa(sp)">Xóa</button></td>
+      </tr>
+      <tr v-if="sanPhamHienThi.length === 0"><td colspan="7" class="empty">Không có sản phẩm phù hợp</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Thêm sản phẩm</h3>
+  <div class="form">
+    <input v-model="moi.ten" placeholder="Tên">
+    <input v-model="moi.gia" type="number" placeholder="Giá">
+    <input v-model="moi.danhMuc" list="dm-list" placeholder="Danh mục">
+    <datalist id="dm-list"><option v-for="dm in dsDanhMuc" :key="dm" :value="dm"></option></datalist>
+    <input v-model="moi.tonKho" type="number" placeholder="Tồn kho">
+    <button @click="them">Thêm</button>
+  </div>
+  <div v-for="e in loi" :key="e" class="err">• {{ e }}</div>
+</div>
+
+<script>
+Vue.createApp({
+  data() {
+    return {
+      trangThai: 'Đang tải...',
+      tuKhoa: '', danhMuc: '', sapXep: '', thongBao: '',
+      sanPham: [
+        { id: 1, ten: 'Bút bi Thiên Long', gia: 5000, danhMuc: 'Văn phòng phẩm', tonKho: 120 },
+        { id: 2, ten: 'Vở kẻ ngang 200 trang', gia: 12000, danhMuc: 'Văn phòng phẩm', tonKho: 0 },
+        { id: 3, ten: 'Chuột không dây', gia: 250000, danhMuc: 'Điện tử', tonKho: 15 },
+        { id: 4, ten: 'Bàn phím cơ', gia: 890000, danhMuc: 'Điện tử', tonKho: 4 },
+        { id: 5, ten: 'Cà phê hòa tan', gia: 65000, danhMuc: 'Thực phẩm', tonKho: 40 },
+        { id: 6, ten: 'Mì tôm Hảo Hảo (thùng)', gia: 110000, danhMuc: 'Thực phẩm', tonKho: 0 },
+      ],
+      moi: { ten: '', gia: '', danhMuc: '', tonKho: '' },
+      loi: [],
+    };
+  },
+  computed: {
+    dsDanhMuc() { return [...new Set(this.sanPham.map(s => s.danhMuc))]; },
+    sanPhamHienThi() {
+      const kw = this.tuKhoa.trim().toLowerCase();
+      let ds = this.sanPham.filter(s =>
+        s.ten.toLowerCase().includes(kw) && (!this.danhMuc || s.danhMuc === this.danhMuc));
+      if (this.sapXep) {
+        ds = [...ds].sort((a, b) => this.sapXep === 'asc' ? a.gia - b.gia : b.gia - a.gia);
+      }
+      return ds; // filter đã tạo mảng mới; mảng gốc không bị thay đổi
+    },
+    tongGiaTriTon() { return this.sanPhamHienThi.reduce((t, s) => t + s.gia * s.tonKho, 0); },
+  },
+  watch: {
+    tuKhoa(moi) {
+      this.thongBao = moi.trim().length === 1 ? 'Từ khóa quá ngắn, hãy nhập ít nhất 2 ký tự để tìm chính xác hơn.' : '';
+    },
+  },
+  mounted() { this.trangThai = 'Sẵn sàng'; },
+  methods: {
+    dinhDang(n) { return n.toLocaleString('vi-VN') + ' đ'; },
+    them() {
+      const e = [];
+      const ten = this.moi.ten.trim();
+      const gia = Number(this.moi.gia);
+      const ton = Number(this.moi.tonKho);
+      if (!ten) e.push('Tên không được rỗng.');
+      if (this.moi.gia === '' || !(gia > 0)) e.push('Giá phải lớn hơn 0.');
+      if (this.moi.tonKho === '' || !Number.isInteger(ton) || ton < 0) e.push('Tồn kho phải là số nguyên không âm.');
+      if (!this.moi.danhMuc.trim()) e.push('Danh mục không được rỗng.');
+      this.loi = e;
+      if (e.length) return;
+      const id = this.sanPham.reduce((m, s) => Math.max(m, s.id), 0) + 1;
+      this.sanPham.push({ id, ten, gia, danhMuc: this.moi.danhMuc.trim(), tonKho: ton });
+      this.moi = { ten: '', gia: '', danhMuc: '', tonKho: '' };
+    },
+    xoa(sp) {
+      if (confirm(`Bạn có chắc muốn xóa "${sp.ten}"?`)) {
+        this.sanPham = this.sanPham.filter(s => s.id !== sp.id);
+      }
+    },
+  },
+}).mount('#app');
+</script>
+</body>
+</html>

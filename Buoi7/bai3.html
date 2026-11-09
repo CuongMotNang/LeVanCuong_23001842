@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài 3 - Giỏ hàng</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:700px;margin:24px auto;padding:0 16px}
+  .dong{display:flex;align-items:center;gap:12px;border-bottom:1px solid #e5e7eb;padding:10px 0}
+  .ten{flex:1}
+  .sl{min-width:28px;text-align:center;font-weight:600}
+  button{padding:4px 10px;cursor:pointer}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .tong{margin-top:16px;font-size:18px;font-weight:700}
+  .trong{padding:24px;text-align:center;color:#777}
+  .loi{color:#b91c1c}
+</style>
+</head>
+<body>
+<div id="app">
+  <h2>Giỏ hàng</h2>
+  <div v-if="loi" class="loi">{{ loi }}</div>
+
+  <div v-if="gioHang.length === 0" class="trong">Giỏ hàng trống</div>
+  <template v-else>
+    <dong-gio-hang
+      v-for="muc in gioHang" :key="muc.id" :muc="muc"
+      @doi-so-luong="capNhatSoLuong"
+      @yeu-cau-xoa="xoaMuc"
+    ></dong-gio-hang>
+    <div class="tong">
+      Tổng số lượng: {{ tongSoLuong }} — Tổng tiền: {{ tongTien.toLocaleString('vi-VN') }} đồng
+    </div>
+  </template>
+</div>
+
+<script>
+const DongGioHang = {
+  props: {
+    muc: { type: Object, required: true }, // { id, ten, donGia, soLuong }
+  },
+  emits: {
+    // Khai báo sự kiện kèm kiểm tra tham số
+    'doi-so-luong': (id, soLuongMoi) => id != null && Number.isInteger(soLuongMoi),
+    'yeu-cau-xoa': (id) => id != null,
+  },
+  computed: {
+    thanhTien() { return this.muc.donGia * this.muc.soLuong; },
+  },
+  // Không gán lại props, không sửa muc.soLuong: chỉ phát sự kiện để cha cập nhật
+  template: `
+    <div class="dong">
+      <span class="ten">{{ muc.ten }}<br><small>{{ muc.donGia.toLocaleString('vi-VN') }} đ</small></span>
+      <button :disabled="muc.soLuong <= 1" @click="$emit('doi-so-luong', muc.id, muc.soLuong - 1)">−</button>
+      <span class="sl">{{ muc.soLuong }}</span>
+      <button :disabled="muc.soLuong >= 99" @click="$emit('doi-so-luong', muc.id, muc.soLuong + 1)">+</button>
+      <span>{{ thanhTien.toLocaleString('vi-VN') }} đ</span>
+      <button @click="$emit('yeu-cau-xoa', muc.id)">Xóa</button>
+    </div>
+  `,
+};
+
+const app = Vue.createApp({
+  data() {
+    return {
+      loi: '',
+      gioHang: [
+        { id: 1, ten: 'Bút', donGia: 5000, soLuong: 2 },
+        { id: 2, ten: 'Vở', donGia: 12000, soLuong: 3 },
+      ],
+    };
+  },
+  computed: {
+    tongSoLuong() { return this.gioHang.reduce((t, m) => t + m.soLuong, 0); },
+    tongTien() { return this.gioHang.reduce((t, m) => t + m.donGia * m.soLuong, 0); },
+  },
+  methods: {
+    capNhatSoLuong(id, soLuongMoi) {
+      // Cha kiểm tra dữ liệu: nguyên, 1..99, mã tồn tại
+      const muc = this.gioHang.find(m => m.id === id);
+      if (!muc) { this.loi = 'Không tìm thấy sản phẩm.'; return; }
+      if (!Number.isInteger(soLuongMoi) || soLuongMoi < 1 || soLuongMoi > 99) {
+        this.loi = 'Số lượng phải là số nguyên từ 1 đến 99.'; return;
+      }
+      this.loi = '';
+      this.gioHang = this.gioHang.map(m => m.id === id ? { ...m, soLuong: soLuongMoi } : m);
+    },
+    xoaMuc(id) {
+      this.gioHang = this.gioHang.filter(m => m.id !== id);
+      this.loi = '';
+    },
+  },
+});
+app.component('dong-gio-hang', DongGioHang);
+app.mount('#app');
+</script>
+</body>
+</html>
